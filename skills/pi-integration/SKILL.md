@@ -16,7 +16,7 @@ apex-lifecycle:
 ---
 # Pi Coding Agent Integration
 
-Generate Pi Coding Agent configuration files from apex-unified's agent definitions and safety rules.
+Generate Pi Coding Agent configuration files from apex-discovery's agent definitions and safety rules.
 
 ## Commands
 

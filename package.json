@@ -1,0 +1,25 @@
+{
+  "name": "@apex-discovery/core",
+  "version": "0.1.0",
+  "description": "apex-discovery: Scientific research extension for apex-unified — integrates 148+ scientific skills for biology, chemistry, medicine, and materials research.",
+  "keywords": [
+    "apex-discovery", "apex-unified", "scientific-research", "ai-scientist",
+    "bioinformatics", "cheminformatics", "drug-discovery", "materials-science",
+    "scientific-agent-skills", "research-automation"
+  ],
+  "type": "module",
+  "main": "cli/main.js",
+  "bin": { "apex-discovery": "cli/main.js" },
+  "scripts": {
+    "setup": "node scripts/setup.js",
+    "test": "node tests/unit.test.js"
+  },
+  "engines": { "node": ">=20.0.0" },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lhbsaa/apex-discovery.git"
+  },
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {}
+}

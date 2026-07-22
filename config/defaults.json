@@ -1,0 +1,54 @@
+{
+  "project": {
+    "name": "",
+    "language": "python"
+  },
+  "mode": "research-scientist",
+  "modes": {
+    "research-scientist": {
+      "label": "科研模式",
+      "triggers": [
+        "科研",
+        "科学",
+        "research",
+        "研究论文",
+        "bioinformatics",
+        "chemistry",
+        "drug discovery",
+        "scientific"
+      ],
+      "skills": [
+        "systematic-debugging",
+        "architecture-decision-records",
+        "error-handling",
+        "verification-loop",
+        "verification-before-completion",
+        "writing-plans"
+      ],
+      "agents": [
+        "architect",
+        "spec-miner",
+        "performance-optimizer",
+        "gsd-roadmapper"
+      ],
+      "phases": {
+        "discuss": true,
+        "plan": true,
+        "execute": true,
+        "verify": true,
+        "ship": false
+      }
+    }
+  },
+  "model": {
+    "default": "deepseek-v4-flash",
+    "provider": "deepseek",
+    "phase-override": {
+      "plan": "deepseek-v4-pro"
+    }
+  },
+  "ai": {
+    "cli": "claude-code",
+    "hooks": true
+  }
+}

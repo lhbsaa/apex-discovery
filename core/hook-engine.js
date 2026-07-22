@@ -47,25 +47,39 @@ export function executeChain(eventType, chain = [], options = {}) {
 }
 
 function resolveHook(source, hook, apexRoot) {
-  // Hook directories by source
-  const dirs = {
-    apex: join(apexRoot, 'hooks'),
-    superpowers: join(apexRoot, '..', 'superpowers', 'hooks'),
-    ecc: join(apexRoot, '..', 'ECC', 'hooks'),
-    gsd: join(apexRoot, '..', 'get-shit-done', 'hooks'),
-    ralph: join(apexRoot, '..', 'ralph', 'hooks'),
-    _fallback: join(apexRoot, 'hooks'),
-  };
+  // Hook directories by source — sibling directories from the monorepo layout.
+  // Each entry is resolved at call time so non-existent dirs are handled
+  // by the existence check below rather than producing noisy errors.
+  const candidateDirs = [
+    join(apexRoot, 'hooks'),                                        // apex native
+    join(apexRoot, '..', 'superpowers', 'hooks'),
+    join(apexRoot, '..', 'ECC', 'hooks'),
+    join(apexRoot, '..', 'get-shit-done', 'hooks'),
+    join(apexRoot, '..', 'ralph', 'hooks'),
+  ];
 
-  // Try the specific source hooks directory
-  const baseDir = dirs[source] || dirs._fallback;
-  for (const ext of ['.js', '.sh', '.cmd']) {
-    const path = join(baseDir, hook + ext);
-    if (existsSync(path)) return path;
+  // Try source-matched directory first (if it exists and has the hook)
+  const sourceIndex = { apex: 0, superpowers: 1, ecc: 2, gsd: 3, ralph: 4 };
+  const preferred = candidateDirs[sourceIndex[source]] ?? candidateDirs[0];
+  if (existsSync(preferred)) {
+    for (const ext of ['.js', '.sh', '.cmd']) {
+      const path = join(preferred, hook + ext);
+      if (existsSync(path)) return path;
+    }
   }
 
-  // Fallback: try generic handler
-  const genericPath = join(dirs._fallback, 'generic-hook-handler.sh');
+  // Fallback: try all remaining candidate dirs
+  for (const dir of candidateDirs) {
+    if (dir === preferred) continue;
+    if (!existsSync(dir)) continue;
+    for (const ext of ['.js', '.sh', '.cmd']) {
+      const path = join(dir, hook + ext);
+      if (existsSync(path)) return path;
+    }
+  }
+
+  // Last resort: try generic handler in the apex hooks dir
+  const genericPath = join(candidateDirs[0], 'generic-hook-handler.sh');
   if (existsSync(genericPath)) return genericPath;
 
   return null;

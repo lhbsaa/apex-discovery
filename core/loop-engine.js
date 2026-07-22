@@ -9,25 +9,30 @@
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { execSync } from 'node:child_process';
+import { loadConfig } from './config.js';
 
 /**
  * Run a Ralph iteration: execute one round of the loop.
+ * When `tool` is omitted or 'claude', the configured AI tool from
+ * config (ai.cli) is used instead of hardcoding a specific CLI.
  * Returns { completed, output, error }.
  */
-export function runIteration({ prompt, tool = 'claude', cwd, timeout = 120000 }) {
+export function runIteration({ prompt, tool, cwd, timeout = 120000 }) {
   const start = Date.now();
+  const actualTool = (tool && tool !== 'claude') ? tool : resolveAiTool();
+  const cliCommand = buildCliCommand(actualTool);
 
   // Detect available tool for graceful fallback
-  let claudeAvailable = false;
-  if (tool === 'claude') {
-    try { execSync('claude --version', { encoding: 'utf8', timeout: 5000, stdio: 'pipe' }); claudeAvailable = true; }
-    catch { /* claude CLI not installed */ }
-  }
+  let toolAvailable = false;
+  try {
+    execSync(`${cliCommand.check}`, { encoding: 'utf8', timeout: 5000, stdio: 'pipe' });
+    toolAvailable = true;
+  } catch { /* tool CLI not installed */ }
 
   try {
     let output;
-    if (tool === 'claude' && claudeAvailable) {
-      output = execSync(`claude --dangerously-skip-permissions --print`, {
+    if (toolAvailable) {
+      output = execSync(cliCommand.run, {
         input: prompt,
         encoding: 'utf8',
         timeout,
@@ -35,10 +40,7 @@ export function runIteration({ prompt, tool = 'claude', cwd, timeout = 120000 })
         env: { ...process.env },
         maxBuffer: 10 * 1024 * 1024,
       });
-    } else if (tool === 'claude' && !claudeAvailable) {
-      return { completed: false, output: '', error: 'Claude CLI not found', duration: Date.now() - start };
     } else {
-      // Generic tool execution
       output = execSync(`echo "${prompt.replace(/"/g, '\\"')}"`, {
         encoding: 'utf8',
         timeout,
@@ -47,10 +49,33 @@ export function runIteration({ prompt, tool = 'claude', cwd, timeout = 120000 })
     }
 
     const completed = output.includes('<promise>COMPLETE</promise>');
-    return { completed, output, error: null, duration: Date.now() - start };
+    return { completed, output, error: toolAvailable ? null : `${actualTool} CLI not found`, duration: Date.now() - start };
   } catch (e) {
     return { completed: false, output: e.stdout || '', error: e.message, duration: Date.now() - start };
   }
+}
+
+/** Resolve the AI tool CLI from merged configuration, falling back to 'claude-code'. */
+function resolveAiTool() {
+  try {
+    const config = loadConfig();
+    return config.ai?.cli || config.platform?.['preferred-cli'] || 'claude-code';
+  } catch {
+    return 'claude-code';
+  }
+}
+
+/** Build { check, run } commands for a given tool name. */
+function buildCliCommand(tool) {
+  const known = {
+    'claude':       { check: 'claude --version',                   run: 'claude --dangerously-skip-permissions --print' },
+    'claude-code':  { check: 'claude --version',                   run: 'claude --dangerously-skip-permissions --print' },
+    'codex':        { check: 'codex --version 2>nul',              run: 'codex exec --print --prompt-stdin' },
+    'pi':           { check: 'pi --version 2>nul',                 run: 'pi --print' },
+    'deepcode':     { check: 'deepcode --version 2>nul',           run: 'deepcode --print' },
+    'omp':          { check: 'omp --version 2>nul',                run: 'omp --print' },
+  };
+  return known[tool] || { check: `${tool} --version 2>nul`, run: `${tool} --print` };
 }
 
 /**

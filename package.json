@@ -15,12 +15,33 @@
     "apex-discovery": "cli/main.js",
     "apex": "cli/main.js"
   },
+  "files": [
+    "cli/",
+    "core/",
+    "config/",
+    "skills/",
+    "agents/",
+    "scripts/",
+    "adapters/",
+    "LICENSE",
+    "README.md",
+    "README_ZH.md",
+    "AGENTS.md",
+    "CHANGELOG.md",
+    "SECURITY.md",
+    "CODE_OF_CONDUCT.md",
+    "CONTRIBUTING.md",
+    "tdd-guide.mjs",
+    ".editorconfig",
+    "package.json"
+  ],
   "scripts": {
     "setup": "node scripts/setup.js",
     "test": "node tests/unit.test.js",
     "stress": "node tests/stress.test.js",
     "demo": "node tests/demo.mjs",
-    "start": "node cli/main.js"
+    "start": "node cli/main.js",
+    "prepublishOnly": "node scripts/setup.js"
   },
   "engines": {
     "node": ">=20.0.0"

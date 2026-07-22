@@ -79,9 +79,20 @@ export function specArchive(name) {
   if (!existsSync(src)) return { error: `Change "${name}" not found` };
   const archive = join(SPEC_DIR, 'changes', 'archive', `${new Date().toISOString().slice(0, 10)}-${name}`);
   ensureDir(archive);
-  for (const f of readdirSync(src)) {
-    writeFileSync(join(archive, f), readFileSync(join(src, f)));
-  }
+  copyDirSync(src, archive);
   rmSync(src, { recursive: true });
   return { archived: true, path: archive };
+}
+
+function copyDirSync(src, dest) {
+  for (const entry of readdirSync(src, { withFileTypes: true })) {
+    const s = join(src, entry.name);
+    const d = join(dest, entry.name);
+    if (entry.isDirectory()) {
+      mkdirSync(d, { recursive: true });
+      copyDirSync(s, d);
+    } else {
+      writeFileSync(d, readFileSync(s));
+    }
+  }
 }

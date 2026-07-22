@@ -25,7 +25,8 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const TMP_DIR = join(ROOT, '.test-tmp');
 
 let passed = 0, failed = 0;
-function test(name, fn) { try { fn(); passed++; console.log(`  ✅ ${name}`); } catch (e) { failed++; console.log(`  ❌ ${name}: ${e.message}`); } }
+const testQueue = [];
+function test(name, fn) { testQueue.push([name, fn]); }
 
 function setup() { if (existsSync(TMP_DIR)) rmSync(TMP_DIR, { recursive: true }); mkdirSync(TMP_DIR, { recursive: true }); }
 function cleanup() { if (existsSync(TMP_DIR)) rmSync(TMP_DIR, { recursive: true }); }
@@ -411,8 +412,445 @@ test('scientific skill directories exist and have SKILL.md content', () => {
   }
 });
 
+// ── 13. Config Engine Helpers ──
+console.log('\n⚙️  Config Helpers');
+
+test('getConfigValue returns value by dot path', async () => {
+  const { getConfigValue } = await import('../core/config.js');
+  const val = getConfigValue('project.language');
+  assert(typeof val === 'string', 'got project.language');
+});
+
+test('getCurrentMode returns mode object', async () => {
+  const { getCurrentMode } = await import('../core/config.js');
+  const mode = getCurrentMode();
+  assert(mode.name, 'has name');
+  assert(Array.isArray(mode.skills), 'has skills array');
+  assert(Array.isArray(mode.agents), 'has agents array');
+});
+
+test('getActiveSkills returns array', async () => {
+  const { getActiveSkills } = await import('../core/config.js');
+  const skills = getActiveSkills();
+  assert(Array.isArray(skills), 'returns array');
+});
+
+test('getActiveAgents returns array', async () => {
+  const { getActiveAgents } = await import('../core/config.js');
+  const agents = getActiveAgents();
+  assert(Array.isArray(agents), 'returns array');
+});
+
+test('isValidMode validates mode names', async () => {
+  const { isValidMode } = await import('../core/config.js');
+  assert(isValidMode('research-scientist'), 'valid mode');
+  assert(isValidMode('daily-dev'), 'valid mode');
+  assert(!isValidMode('nonexistent'), 'invalid mode');
+  assert(!isValidMode(''), 'empty string');
+});
+
+test('getModel returns model config', async () => {
+  const { getModel } = await import('../core/config.js');
+  const model = getModel();
+  assert(model.default, 'has default model');
+  assert(model.provider, 'has provider');
+});
+
+test('getAiTool returns tool config', async () => {
+  const { getAiTool } = await import('../core/config.js');
+  const tool = getAiTool();
+  assert(tool.cli, 'has CLI command');
+  assert(typeof tool.hooks === 'boolean', 'has hooks flag');
+});
+
+// ── 14. Agent Engine: findAgentsByKeyword ──
+console.log('\n🤖 Agent Engine (extended)');
+
+test('findAgentsByKeyword matches by name', async () => {
+  const { findAgentsByKeyword } = await import('../core/agent-engine.js');
+  // Clear cache so fresh data loads
+  const { clearCache } = await import('../core/agent-engine.js');
+  clearCache();
+  const results = findAgentsByKeyword('architect');
+  assert(results.length > 0, `Found ${results.length} agents for "architect"`);
+  assert(results.some(a => a.name.includes('architect')), 'contains architect');
+});
+
+test('findAgentsByKeyword matches by description', async () => {
+  const { findAgentsByKeyword, clearCache } = await import('../core/agent-engine.js');
+  clearCache();
+  const results = findAgentsByKeyword('review');
+  assert(results.length > 0, `Found ${results.length} agents for "review"`);
+});
+
+test('findAgentsByKeyword returns empty for no match', async () => {
+  const { findAgentsByKeyword, clearCache } = await import('../core/agent-engine.js');
+  clearCache();
+  const results = findAgentsByKeyword('xyznonexistent12345');
+  assert.equal(results.length, 0, 'empty results');
+});
+
+// ── 15. Mode Engine ──
+console.log('\n🔄 Mode Engine');
+
+test('detectModeFromInput returns null for empty input', async () => {
+  const { detectModeFromInput } = await import('../core/mode-engine.js');
+  assert.equal(detectModeFromInput(''), null);
+  assert.equal(detectModeFromInput(null), null);
+});
+
+test('detectModeFromInput returns null for non-triggering input', async () => {
+  const { detectModeFromInput } = await import('../core/mode-engine.js');
+  const result = detectModeFromInput('this is some random text with no mode triggers');
+  assert.equal(result, null, 'no mode triggered');
+});
+
+test('parseSlashCommand parses valid commands', async () => {
+  const { parseSlashCommand } = await import('../core/mode-engine.js');
+  const r1 = parseSlashCommand('/apex:mode research-scientist');
+  assert(r1, 'parsed');
+  assert.equal(r1.command, 'mode', 'command=mode');
+  assert.equal(r1.args, 'research-scientist', 'args parsed');
+
+  const r2 = parseSlashCommand('/apex:status');
+  assert(r2, 'parsed status');
+  assert.equal(r2.command, 'status', 'command=status');
+  assert.equal(r2.args, '', 'no args');
+});
+
+test('parseSlashCommand rejects invalid formats', async () => {
+  const { parseSlashCommand } = await import('../core/mode-engine.js');
+  assert.equal(parseSlashCommand(''), null, 'empty');
+  assert.equal(parseSlashCommand('/other:mode'), null, 'wrong prefix');
+  assert.equal(parseSlashCommand(null), null, 'null');
+});
+
+test('executeSlashCommand handles mode commands', async () => {
+  const { executeSlashCommand } = await import('../core/mode-engine.js');
+  const r = executeSlashCommand('mode', 'status');
+  assert(r.handled, 'handled');
+  assert(r.message.includes('Current mode'), 'shows status');
+});
+
+test('executeSlashCommand handles unknown commands', async () => {
+  const { executeSlashCommand } = await import('../core/mode-engine.js');
+  const r = executeSlashCommand('unknown', '');
+  assert.equal(r.handled, false, 'not handled');
+});
+
+// ── 16. Spec Engine ──
+console.log('\n📋 Spec Engine');
+
+test('specInit initializes spec directories', async () => {
+  const testDir = join(TMP_DIR, 'spec-init');
+  mkdirSync(testDir, { recursive: true });
+  const origCwd = process.cwd();
+  process.chdir(testDir);
+  try {
+    const { specInit } = await import('../core/spec-engine.js');
+    const r = specInit();
+    assert(r.dir, 'has dir');
+    assert(existsSync(join(testDir, 'openspec', 'changes')), 'changes dir created');
+    assert(existsSync(join(testDir, 'openspec', 'explorations')), 'explorations dir created');
+    assert(existsSync(join(testDir, 'openspec', 'specs')), 'specs dir created');
+  } finally {
+    process.chdir(origCwd);
+  }
+});
+
+test('specPropose creates proposal artifacts', async () => {
+  const testDir = join(TMP_DIR, 'spec-propose');
+  mkdirSync(testDir, { recursive: true });
+  const origCwd = process.cwd();
+  process.chdir(testDir);
+  try {
+    // Init first
+    const { specInit, specPropose } = await import('../core/spec-engine.js');
+    specInit();
+    const r = specPropose('Add user authentication');
+    assert(r.name, 'has name');
+    assert(r.dir, 'has dir');
+    const changeDir = r.dir;
+    assert(existsSync(join(changeDir, 'proposal.md')), 'proposal.md created');
+    assert(existsSync(join(changeDir, 'design.md')), 'design.md created');
+    assert(existsSync(join(changeDir, 'tasks.md')), 'tasks.md created');
+  } finally {
+    process.chdir(origCwd);
+  }
+});
+
+test('specList returns active changes', async () => {
+  const testDir = join(TMP_DIR, 'spec-list');
+  mkdirSync(testDir, { recursive: true });
+  const origCwd = process.cwd();
+  process.chdir(testDir);
+  try {
+    const { specInit, specPropose, specList } = await import('../core/spec-engine.js');
+    specInit();
+    specPropose('Feature one');
+    const list = specList();
+    assert(list.length >= 1, 'has at least 1 change');
+    assert(list[0].name, 'has name field');
+  } finally {
+    process.chdir(origCwd);
+  }
+});
+
+test('specArchive archives a change', async () => {
+  const testDir = join(TMP_DIR, 'spec-archive');
+  mkdirSync(testDir, { recursive: true });
+  const origCwd = process.cwd();
+  process.chdir(testDir);
+  try {
+    const { specInit, specPropose, specArchive } = await import('../core/spec-engine.js');
+    specInit();
+    const prop = specPropose('To archive');
+    const archiveR = specArchive(prop.name);
+    assert(archiveR.archived, 'archived');
+    assert(archiveR.path, 'has archive path');
+  } finally {
+    process.chdir(origCwd);
+  }
+});
+
+// ── 17. Hardware Config Engine ──
+console.log('\n🔧 Hardware Config');
+
+test('loadHwConfig returns null for missing file', async () => {
+  const { loadHwConfig } = await import('../core/hw-config.js');
+  const r = loadHwConfig(join(TMP_DIR, 'nonexistent'));
+  assert.equal(r, null, 'null for missing');
+});
+
+test('generateHwConfig generates espidf template', async () => {
+  const { generateHwConfig } = await import('../core/hw-config.js');
+  const cfg = generateHwConfig('espidf', 'test-project');
+  assert(cfg, 'config generated');
+  assert.equal(cfg.mcu, 'esp32-s3', 'mcu');
+  assert.equal(cfg.framework, 'espidf', 'framework');
+  assert(cfg.peripherals, 'has peripherals');
+});
+
+test('generateHwConfig generates platformio template', async () => {
+  const { generateHwConfig } = await import('../core/hw-config.js');
+  const cfg = generateHwConfig('platformio', 'pio-test');
+  assert(cfg, 'config generated');
+  assert.equal(cfg.framework, 'arduino', 'platformio uses arduino framework');
+});
+
+test('generateHwConfig generates arduino template', async () => {
+  const { generateHwConfig } = await import('../core/hw-config.js');
+  const cfg = generateHwConfig('arduino', 'ard-test');
+  assert(cfg, 'config generated');
+  assert.equal(cfg.board, 'esp32-dev', 'arduino board');
+});
+
+test('generateHwConfig returns null for unknown framework', async () => {
+  const { generateHwConfig } = await import('../core/hw-config.js');
+  const cfg = generateHwConfig('unknown-framework', 'test');
+  assert.equal(cfg, null, 'null');
+});
+
+test('hwConstraintsPrompt returns prompt fragment', async () => {
+  const { hwConstraintsPrompt } = await import('../core/hw-config.js');
+  // No hardware.json in this project root
+  const prompt = hwConstraintsPrompt(join(TMP_DIR, 'nonexistent'));
+  assert.equal(prompt, '', 'empty for no hardware');
+});
+
+test('hwConstraintsPrompt reads hardware.json', async () => {
+  const testDir = join(TMP_DIR, 'hw-prompt');
+  mkdirSync(testDir, { recursive: true });
+  writeFileSync(join(testDir, 'hardware.json'), JSON.stringify({
+    mcu: 'esp32', clock: 240000000, framework: 'arduino',
+    board: 'esp32-dev', flash_size: '4MB', psram: 'none',
+    peripherals: { i2c: { sda: 21, scl: 22 }, pins: { led: 2 } }
+  }), 'utf8');
+  const { hwConstraintsPrompt } = await import('../core/hw-config.js');
+  const prompt = hwConstraintsPrompt(testDir);
+  assert(prompt.includes('esp32'), 'has mcu');
+  assert(prompt.includes('240'), 'has clock');
+});
+
+test('detectFramework detects by file presence', async () => {
+  const testDir = join(TMP_DIR, 'fw-detect');
+  mkdirSync(testDir, { recursive: true });
+  const { detectFramework } = await import('../core/hw-config.js');
+  
+  // No framework files → null
+  assert.equal(detectFramework(testDir), null, 'no framework detected on empty dir');
+  
+  // platformio.ini
+  writeFileSync(join(testDir, 'platformio.ini'), '[env:test]', 'utf8');
+  const r1 = detectFramework(testDir);
+  assert(r1, 'detected');
+  assert.equal(r1.framework, 'platformio', 'platformio detected');
+});
+
+// ── 18. Pi Config Engine ──
+console.log('\n🤖 Pi Config');
+
+test('generateTeamConfig creates team config', async () => {
+  const testDir = join(TMP_DIR, 'pi-team');
+  mkdirSync(testDir, { recursive: true });
+  const origCwd = process.cwd();
+  process.chdir(testDir);
+  try {
+    const { generateTeamConfig } = await import('../core/pi-config.js');
+    const agents = ['planner', 'code-reviewer', 'architect'];
+    const r = generateTeamConfig(agents);
+    assert(r.path, 'has path');
+    assert(existsSync(r.path), 'file created');
+    assert(r.team, 'has team name');
+  } finally {
+    process.chdir(origCwd);
+  }
+});
+
+test('generateChainConfig creates chain config', async () => {
+  const testDir = join(TMP_DIR, 'pi-chain');
+  mkdirSync(testDir, { recursive: true });
+  const origCwd = process.cwd();
+  process.chdir(testDir);
+  try {
+    const { generateChainConfig } = await import('../core/pi-config.js');
+    const r = generateChainConfig();
+    assert(r.path, 'has path');
+    assert(r.steps, 'has steps');
+    assert(r.steps >= 3, 'at least 3 steps');
+  } finally {
+    process.chdir(origCwd);
+  }
+});
+
+test('generateDamageControl creates safety rules', async () => {
+  const testDir = join(TMP_DIR, 'pi-damage');
+  mkdirSync(testDir, { recursive: true });
+  const origCwd = process.cwd();
+  process.chdir(testDir);
+  try {
+    const { generateDamageControl } = await import('../core/pi-config.js');
+    const r = generateDamageControl();
+    assert(r.path, 'has path');
+    assert(r.rules, 'has rule categories');
+  } finally {
+    process.chdir(origCwd);
+  }
+});
+
+test('setupPiAll generates all configs', async () => {
+  const testDir = join(TMP_DIR, 'pi-all');
+  mkdirSync(testDir, { recursive: true });
+  const origCwd = process.cwd();
+  process.chdir(testDir);
+  try {
+    const { setupPiAll } = await import('../core/pi-config.js');
+    const agents = ['planner', 'builder', 'reviewer'];
+    const r = setupPiAll(agents);
+    assert(r.team, 'team config');
+    assert(r.chain, 'chain config');
+    assert(r.damage, 'damage config');
+  } finally {
+    process.chdir(origCwd);
+  }
+});
+
+// ── 19. Loop Engine Extended ──
+console.log('\n🔄 Loop Engine Extended');
+
+test('runIteration returns error for nonexistent tool', async () => {
+  const { runIteration } = await import('../core/loop-engine.js');
+  const r = runIteration({ prompt: 'test', tool: '__nonexistent_tool__', timeout: 5000 });
+  assert(r.completed === false, 'not completed');
+  assert(r.output !== undefined, 'has output');
+});
+
+test('checkBackpressure runs gates without throwing', async () => {
+  const { checkBackpressure } = await import('../core/loop-engine.js');
+  // Run in TMP_DIR to isolate from any project config
+  const testDir = join(TMP_DIR, 'backpressure');
+  mkdirSync(testDir, { recursive: true });
+  writeFileSync(join(testDir, 'package.json'), JSON.stringify({ name: 'test', scripts: { test: 'node -e "console.log(\'ok\')"' } }), 'utf8');
+  const r = checkBackpressure(testDir);
+  assert(Array.isArray(r.gates), 'has gates array');
+  assert(typeof r.passed === 'boolean', 'has passed boolean');
+});
+
+// ── 20. Plugin Engine Extended ──
+console.log('\n🔌 Plugin Engine Extended');
+
+test('pluginCount returns number', async () => {
+  const { pluginCount } = await import('../core/plugin-engine.js');
+  const count = pluginCount();
+  assert(typeof count === 'number', 'returns number');
+  assert(count >= 0, 'non-negative');
+});
+
+test('installPlugin handles nonexistent source', async () => {
+  const { installPlugin } = await import('../core/plugin-engine.js');
+  const r = installPlugin('/nonexistent/path/to/plugin');
+  assert.equal(r.success, false, 'not successful');
+  assert(r.error, 'has error message');
+});
+
+test('uninstallPlugin handles nonexistent name', async () => {
+  const { uninstallPlugin } = await import('../core/plugin-engine.js');
+  const r = uninstallPlugin('nonexistent-plugin-name');
+  assert.equal(r.success, false, 'not successful');
+  assert(r.error, 'has error message');
+});
+
+// ── 21. deepMerge Array Strategy ──
+console.log('\n🔗 deepMerge Array Tests');
+
+test('deepMerge concatenates arrays from different layers', async () => {
+  const mod = await import('../core/config.js');
+  // Merge three layers: defaults have array, project adds to it
+  const defaults = { tools: { enabled: ['tdd', 'lint'] } };
+  const user = { tools: { enabled: ['code-review'] } };
+  const project = { tools: { enabled: ['deploy'] } };
+  const merged = mod.deepMerge(defaults, user, project);
+  // All unique items should be present
+  const enabled = merged.tools.enabled;
+  assert(enabled.includes('tdd'), 'tdd from defaults');
+  assert(enabled.includes('lint'), 'lint from defaults');
+  assert(enabled.includes('code-review'), 'code-review from user');
+  assert(enabled.includes('deploy'), 'deploy from project');
+  // No duplicates
+  assert.equal(enabled.length, 4, '4 unique tools');
+});
+
+test('deepMerge merges mode skills array from project config', async () => {
+  const mod = await import('../core/config.js');
+  // Simulate: user wants to ADD a skill to an existing mode
+  const defaults = {
+    modes: {
+      'daily-dev': {
+        skills: ['test-driven-development', 'git-workflow'],
+        agents: ['planner']
+      }
+    }
+  };
+  const project = {
+    modes: {
+      'daily-dev': {
+        skills: ['my-custom-skill']
+      }
+    }
+  };
+  const merged = mod.deepMerge(defaults, {}, project);
+  const skills = merged.modes['daily-dev'].skills;
+  assert(skills.includes('my-custom-skill'), 'custom skill included');
+  assert(skills.includes('test-driven-development'), 'default TDD skill also included');
+  assert(skills.includes('git-workflow'), 'default git-workflow also included');
+});
+
 // ── Summary ──
 console.log('\n' + '='.repeat(50));
+for (const [name, fn] of testQueue) {
+  try { await fn(); passed++; console.log(`  ✅ ${name}`); }
+  catch (e) { failed++; console.log(`  ❌ ${name}: ${e.message}`); }
+}
 console.log(`Results: ${passed} ✅ | ${failed} ❌`);
 cleanup();
 process.exit(failed > 0 ? 1 : 0);

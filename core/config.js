@@ -20,21 +20,31 @@ function readJSON(path) {
   catch { return {}; }
 }
 
-function deepMerge(...sources) {
+/** Deep-merge objects — arrays are concatenated (with dedup), objects recursed, primitives replaced. */
+export function deepMerge(...sources) {
   const result = {};
   for (const src of sources) {
     for (const key of Object.keys(src)) {
-      if (src[key] && typeof src[key] === 'object' && !Array.isArray(src[key])) {
-        result[key] = deepMerge(result[key] || {}, src[key]);
+      const val = src[key];
+      const existing = result[key];
+      if (val && typeof val === 'object' && !Array.isArray(val)) {
+        result[key] = deepMerge(existing || {}, val);
+      } else if (Array.isArray(val) && Array.isArray(existing)) {
+        // Extend arrays: higher-priority items are appended (with dedup)
+        const existingSet = new Set(existing);
+        result[key] = [...existing, ...val.filter(v => !existingSet.has(v))];
       } else {
-        result[key] = src[key];
+        result[key] = val;
       }
     }
   }
   return result;
 }
 
-/** Load config from all three layers, merged */
+/**
+ * Load config from all three layers, merged.
+ * @returns {Record<string,any>}
+ */
 export function loadConfig() {
   const defaultsPath = join(__dirname, '..', 'config', 'defaults.json');
   const userConfigPath = join(homedir(), '.apex-discovery', 'config.json');
@@ -42,7 +52,11 @@ export function loadConfig() {
   return deepMerge(readJSON(defaultsPath), readJSON(userConfigPath), readJSON(projectConfigPath));
 }
 
-/** Write project-level config */
+/**
+ * Write project-level config.
+ * @param {Record<string,any>} config
+ * @returns {boolean}
+ */
 export function writeConfig(config) {
   const dir = join(PROJECT_ROOT, '.apex-discovery');
   if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
@@ -50,7 +64,11 @@ export function writeConfig(config) {
   return true;
 }
 
-/** Get a specific config value by dot path */
+/**
+ * Get a specific config value by dot path.
+ * @param {string} path
+ * @returns {any|undefined}
+ */
 export function getConfigValue(path) {
   const config = loadConfig();
   const keys = path.split('.');
@@ -64,7 +82,10 @@ export function getConfigValue(path) {
 
 // ── Mode Helpers ──
 
-/** Get the current mode definition (merged with defaults) */
+/**
+ * Get the current mode definition (merged with defaults).
+ * @returns {{name:string, skills:string[], agents:string[], phases:Record<string,any>}}
+ */
 export function getCurrentMode() {
   const config = loadConfig();
   const modeName = config.mode || 'daily-dev';
@@ -75,7 +96,10 @@ export function getCurrentMode() {
   };
 }
 
-/** Return the list of skill names to load for the current mode */
+/**
+ * Return the list of skill names to load for the current mode.
+ * @returns {string[]}
+ */
 export function getActiveSkills() {
   const config = loadConfig();
   const modeName = config.mode || 'daily-dev';
@@ -83,7 +107,10 @@ export function getActiveSkills() {
   return modeDef?.skills || [];
 }
 
-/** Return the list of agent names to load for the current mode */
+/**
+ * Return the list of agent names to load for the current mode.
+ * @returns {string[]}
+ */
 export function getActiveAgents() {
   const config = loadConfig();
   const modeName = config.mode || 'daily-dev';
@@ -91,13 +118,20 @@ export function getActiveAgents() {
   return modeDef?.agents || [];
 }
 
-/** Validate a mode name exists */
+/**
+ * Validate a mode name exists.
+ * @param {string} name
+ * @returns {boolean}
+ */
 export function isValidMode(name) {
   const config = loadConfig();
   return !!config.modes?.[name];
 }
 
-/** Get model configuration */
+/**
+ * Get model configuration.
+ * @returns {{default:string, provider:string, phaseOverride:Record<string,string>}}
+ */
 export function getModel() {
   const config = loadConfig();
   return {
@@ -107,7 +141,10 @@ export function getModel() {
   };
 }
 
-/** Get AI tool configuration */
+/**
+ * Get AI tool configuration.
+ * @returns {{cli:string, hooks:boolean}}
+ */
 export function getAiTool() {
   const config = loadConfig();
   return {

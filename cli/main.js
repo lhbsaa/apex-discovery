@@ -9,7 +9,7 @@
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execSync } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const APEX_DIR = join(__dirname, '..', 'node_modules', '@apex-unified', 'core');
@@ -38,7 +38,7 @@ const cmd = args[0];
 // Count scientific skills
 let sciCount = 0;
 if (existsSync(SCI_SKILLS)) {
-  sciCount = require('fs').readdirSync(SCI_SKILLS, { withFileTypes: true })
+  sciCount = readdirSync(SCI_SKILLS, { withFileTypes: true })
     .filter(d => d.isDirectory()).length;
 }
 

@@ -2,19 +2,18 @@
 /**
  * apex-discovery — Scientific research extension for apex-unified
  *
- * Uses apex-unified's engine directly, adds 148+ scientific skills.
- * Install: node scripts/setup.js
+ * Uses apex-unified's engine directly, skills in skills/ are auto-discovered.
  */
 
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execSync } from 'node:child_process';
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, lstatSync } from 'node:fs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const APEX_DIR = join(__dirname, '..', 'node_modules', '@apex-unified', 'core');
 const APEX_DEV = join(__dirname, '..', '..', 'apex-unified');
-const SCI_SKILLS = join(__dirname, '..', 'scientific-agent-skills', 'skills');
+const SKILLS_DIR = join(__dirname, '..', 'skills');
 
 // Find apex-unified engine (local dev or npm)
 const apexRoot = existsSync(join(APEX_DEV, 'cli', 'main.js')) ? APEX_DEV :
@@ -25,37 +24,49 @@ if (!apexRoot) {
   process.exit(1);
 }
 
-// Read config
-const configPath = join(__dirname, '..', 'config', 'defaults.json');
-let mode = 'research-scientist';
-if (existsSync(configPath)) {
-  try { mode = JSON.parse(readFileSync(configPath, 'utf8')).mode || mode; } catch {}
+// Count skills (handles Windows symlinks)
+function countSkills(dir) {
+  if (!existsSync(dir)) return 0;
+  let count = 0;
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const fullPath = join(dir, entry.name);
+    if (entry.isDirectory()) { count++; continue; }
+    try { if (lstatSync(fullPath).isSymbolicLink()) count++; } catch {}
+  }
+  return count;
 }
+
+let skillCount = countSkills(SKILLS_DIR);
 
 const args = process.argv.slice(2);
 const cmd = args[0];
 
-// Count scientific skills
-let sciCount = 0;
-if (existsSync(SCI_SKILLS)) {
-  sciCount = readdirSync(SCI_SKILLS, { withFileTypes: true })
-    .filter(d => d.isDirectory()).length;
+if (!cmd || cmd === 'help' || cmd === '--help') {
+  console.log(`
+apex-discovery — Scientific Research Extension
+
+Usage:
+  node cli/main.js status              Show project status + skill count
+  node cli/main.js setup               Run setup to link scientific skills
+  node cli/main.js config --show       View configuration
+  node cli/main.js config --mode <name> Switch mode
+  node cli/main.js plan [phase]        Generate phase prompt
+  node cli/main.js <any apex cmd>      Forwarded to apex-unified engine
+
+Skills: ${skillCount} scientific skills available (auto-discovered)
+`);
+  process.exit(0);
 }
 
 if (cmd === 'status') {
-  console.log('\napex-discovery — Scientific Research Extension');
-  console.log('='.repeat(45));
-  console.log(`Mode:         ${mode} (research-scientist)`);
-  console.log(`Sci. skills:  ${sciCount}+ (from scientific-agent-skills)`);
+  console.log(`\napex-discovery — Scientific Research Extension`);
+  console.log(`Skills:       ${skillCount} scientific (auto-discovered)`);
   console.log(`Apex engine:  ${apexRoot}`);
+  console.log(`Run setup:    node scripts/setup.js`);
   console.log('');
-  // Forward to apex-unified status
   execSync(`node "${join(apexRoot, 'cli', 'main.js')}" ${args.join(' ')}`, { stdio: 'inherit' });
 } else if (cmd === 'setup') {
   execSync(`node "${join(__dirname, '..', 'scripts', 'setup.js')}"`, { stdio: 'inherit' });
 } else {
-  // Forward all other commands to apex-unified engine
-  // Inject SCI_SKILLS_DIR for skill auto-discovery
-  const env = { ...process.env, SCI_SKILLS_DIR: SCI_SKILLS };
-  execSync(`node "${join(apexRoot, 'cli', 'main.js')}" ${args.join(' ')}`, { stdio: 'inherit', env });
+  execSync(`node "${join(apexRoot, 'cli', 'main.js')}" ${args.join(' ')}`, { stdio: 'inherit' });
 }

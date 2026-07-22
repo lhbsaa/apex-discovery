@@ -35,6 +35,7 @@
         "discuss": true,
         "plan": true,
         "execute": true,
+        "build": true,
         "verify": true,
         "ship": false
       }

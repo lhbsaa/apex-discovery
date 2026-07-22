@@ -1,8 +1,8 @@
 /**
  * apex-discovery Setup Script
  *
- * 1. Clones scientific-agent-skills (148+ skills)
- * 2. Links skill directories for auto-discovery
+ * 1. Clones scientific-agent-skills (if not present)
+ * 2. Symlinks all 149 skills into skills/ for auto-discovery
  * 3. Verifies all skills load correctly
  */
 
@@ -21,22 +21,37 @@ console.log('🔬 apex-discovery setup\n');
 
 // 1. Clone scientific-agent-skills
 if (!existsSync(SCI_SKILLS_DIR)) {
-  console.log('📦 Cloning scientific-agent-skills (148 skills)...');
+  console.log('📦 Cloning scientific-agent-skills (149 skills)...');
   execSync(`git clone --depth 1 ${SCI_SKILLS_REPO} "${SCI_SKILLS_DIR}"`, { stdio: 'inherit', cwd: ROOT });
   console.log('✅ Cloned\n');
 } else {
-  console.log('✅ scientific-agent-skills already exists, updating...\n');
+  console.log('✅ scientific-agent-skills already exists\n');
 }
 
-// 2. Count and verify skills
+// 2. Symlink all skills into skills/ for auto-discovery
+mkdirSync(SKILLS_DIR, { recursive: true });
 const sciSkills = readdirSync(join(SCI_SKILLS_DIR, 'skills'), { withFileTypes: true })
-  .filter(d => d.isDirectory() && existsSync(join(SCI_SKILLS_DIR, 'skills', d.name, 'SKILL.md')))
-  .map(d => d.name);
+  .filter(d => d.isDirectory() && existsSync(join(SCI_SKILLS_DIR, 'skills', d.name, 'SKILL.md')));
 
-console.log(`📊 Scientific skills found: ${sciSkills.length}`);
-console.log(`🔗 Link: apex-discovery/skills/ → 148+ skills ready for auto-discovery\n`);
+let linked = 0;
+for (const skill of sciSkills) {
+  const target = join(SCI_SKILLS_DIR, 'skills', skill.name);
+  const linkPath = join(SKILLS_DIR, skill.name);
+  if (!existsSync(linkPath)) {
+    try {
+      symlinkSync(target, linkPath, 'junction');
+      linked++;
+    } catch {
+      // junction symlinks may fail on some Windows configurations
+      // Fall back: no error, user can manually copy
+    }
+  }
+}
 
-// 3. Write config with research-scientist mode
+console.log(`📊 Scientific skills: ${sciSkills.length} found, ${linked} linked`);
+console.log(`🔗 ${SKILLS_DIR}/ → auto-discovered by apex-unified engine\n`);
+
+// 3. Write config
 const configPath = join(ROOT, 'config', 'defaults.json');
 const config = {
   project: { name: '', language: 'python' },
@@ -46,13 +61,11 @@ const config = {
       label: '科研模式',
       triggers: ['科研', '科学', 'research', '研究论文', 'bioinformatics', 'chemistry', 'drug discovery', 'scientific'],
       skills: [
-        // apex-unified core research skills
         'systematic-debugging', 'architecture-decision-records', 'error-handling',
-        'verification-loop', 'verification-before-completion', 'writing-plans',
-        // Scientific skills auto-discovered from scientific-agent-skills
+        'verification-loop', 'verification-before-completion', 'writing-plans'
       ],
       agents: ['architect', 'spec-miner', 'performance-optimizer', 'gsd-roadmapper'],
-      phases: { discuss: true, plan: true, execute: true, verify: true, ship: false }
+      phases: { discuss: true, plan: true, execute: true, build: true, verify: true, ship: false }
     }
   },
   model: { default: 'deepseek-v4-flash', provider: 'deepseek', 'phase-override': { plan: 'deepseek-v4-pro' } },
@@ -61,14 +74,10 @@ const config = {
 
 mkdirSync(join(ROOT, 'config'), { recursive: true });
 writeFileSync(configPath, JSON.stringify(config, null, 2));
+console.log('✅ Config written (research-scientist mode, 6 phases)\n');
 
-console.log('✅ Config written with research-scientist mode\n');
-
-// 4. Print summary
+// 4. Summary
 console.log('=== apex-discovery setup complete ===');
-console.log(`Scientific skills: ${sciSkills.length} ready`);
+console.log(`Scientific skills: ${sciSkills.length} ready for discovery`);
 console.log(`Mode: research-scientist`);
 console.log(`Run: node cli/main.js status`);
-console.log(`\nTip: Skills are auto-discovered from:`);
-console.log(`  ${SKILLS_DIR}/            → manual/curated skills`);
-console.log(`  ${SCI_SKILLS_DIR}/skills/  → 148+ scientific skills`);

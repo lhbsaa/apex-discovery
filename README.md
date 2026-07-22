@@ -4,7 +4,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D20-brightgreen)](package.json)
-[![Scientific Skills](https://img.shields.io/badge/Scientific_Skills-148%2B-brightgreen)](https://github.com/K-Dense-AI/scientific-agent-skills)
+[![Scientific Skills](https://img.shields.io/badge/Scientific_Skills-149-brightgreen)](https://github.com/K-Dense-AI/scientific-agent-skills)
 
 Powered by [apex-unified](https://github.com/lhbsaa/apex-unified) engine + [Scientific Agent Skills](https://github.com/K-Dense-AI/scientific-agent-skills) (31.4k⭐).
 

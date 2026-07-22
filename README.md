@@ -46,6 +46,149 @@ node cli/main.js status
 | 🌍 **Geospatial Science** | Satellite imagery, GIS, spatial statistics |
 | 📚 **Scientific Communication** | Literature review, writing, peer review, posters |
 
+### Complete Skill List (149)
+
+<details>
+<summary>🧬 Bioinformatics & Genomics (28)</summary>
+
+```
+anndata, arboreto, arbor, biopython, bulk-rnaseq, cellxgene-census,
+deeptools, dhdna-profiler, etetoolkit, flowio, geniml, gget, gtars,
+lamindb, matchms, nextflow, onekgpd, pathway-enrichment, phylogenetics,
+polars-bio, pyopenms, pysam, pydeseq2, scanpy, scikit-bio, scvelo,
+scvi-tools, tamarind, tiledbvcf
+```
+</details>
+
+<details>
+<summary>🧪 Cheminformatics & Drug Discovery (12)</summary>
+
+```
+datamol, deepchem, diffdock, medchem, molfeat, pytdc, rdkit,
+torchdrug, bioservices, cobrapy, hypogenic, molecule-generation
+```
+</details>
+
+<details>
+<summary>🔬 Proteomics & Structural Biology (5)</summary>
+
+```
+adyaptyv, esm, molecular-dynamics, primekg, alphafold
+```
+</details>
+
+<details>
+<summary>🏥 Clinical & Medical (10)</summary>
+
+```
+bids, clinical-decision-support, clinical-reports, histolab,
+imaging-data-commons, pacsomatic, pathml, pydicom, pyhealth,
+treatment-plans
+```
+</details>
+
+<details>
+<summary>🤖 Machine Learning & AI (14)</summary>
+
+```
+dask, modal, optimize-for-gpu, polars, pymc, pytorch-lightning,
+scikit-learn, shap, stable-baselines3, statistical-analysis,
+statistical-power, statsmodels, transformers, umap-learn
+```
+</details>
+
+<details>
+<summary>🌌 Physics & Astronomy (6)</summary>
+
+```
+astropy, cirq, pennylane, qiskit, qutip, sympy
+```
+</details>
+
+<details>
+<summary>⚙️ Engineering & Simulation (4)</summary>
+
+```
+fluidsim, pufferlib, pymoo, simpy
+```
+</details>
+
+<details>
+<summary>🌍 Geospatial Science (3)</summary>
+
+```
+geomaster, geopandas, rioxarray
+```
+</details>
+
+<details>
+<summary>📚 Academic Communication (14)</summary>
+
+```
+citation-management, docx, infographics, latex-posters, literature-review,
+markdown-mermaid-writing, paper-lookup, paperzilla, pdf, peer-review,
+pptx, pptx-posters, scientific-schematics, scientific-slides,
+scientific-visualization, scientific-writing, venue-templates, xlsx
+```
+</details>
+
+<details>
+<summary>🎓 Research Methodology (8)</summary>
+
+```
+experimental-design, hypothesis-generation, research-grants,
+research-lookup, scholar-evaluation, scientific-brainstorming,
+scientific-critical-thinking, what-if-oracle
+```
+</details>
+
+<details>
+<summary>🔗 Platform & Integration (13)</summary>
+
+```
+autoskill, benchling-integration, database-lookup, dnanexus-integration,
+exa-search, ginkgo-cloud-lab, labarchive-integration, latchbio-integration,
+omero-integration, open-notebook, opentrons-integration, parallel-web,
+pi-agent, protocolsio-integration
+```
+</details>
+
+<details>
+<summary>📊 Data & Visualization (10)</summary>
+
+```
+exploratory-data-analysis, generate-image, matplotlib, networkx,
+seaborn, markitdown, liteparse, vaex, zarr-python, polars
+```
+</details>
+
+<details>
+<summary>🧠 Neuro & Cognitive (4)</summary>
+
+```
+consciousness-council, neurokit2, neuropixels-analysis, rowan
+```
+</details>
+
+<details>
+<summary>🏭 Industry & Regulatory (3)</summary>
+
+```
+iso-13485-certification, market-research-reports, usfiscaldata
+```
+</details>
+
+<details>
+<summary>🛠️ Other Tools (15)</summary>
+
+```
+bgpt-paper-search, depmap, get-available-resources, glycoengineering,
+hugging-science, matlab, neurokit2, pymatgen, timesfm-forecasting,
+pylabrobot, pyzotero, scikit-survival, tiledbvcf, torch-geometric,
+stable-baselines3
+```
+</details>
+
 ## Usage
 
 ```bash

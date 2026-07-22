@@ -1,5 +1,5 @@
 /**
- * apex-unified Plugin Engine
+ * apex-discovery Plugin Engine
  *
  * Manages plugin discovery, loading, and lifecycle.
  * Plugins extend skills/ and agents/ directories with additional content.

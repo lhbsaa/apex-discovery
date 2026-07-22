@@ -121,7 +121,7 @@ Total Skills:   ${skillCount} (development + scientific, embedded)
       console.log(`✅ Set ${key} = ${JSON.stringify(value)}`);
     } else if (args.includes('--reset')) {
       const defaults = JSON.parse(readFileSync(new URL('../config/defaults.json', import.meta.url), 'utf8'));
-      const projectDir = join(process.cwd(), '.apex-unified');
+      const projectDir = join(process.cwd(), '.apex-discovery');
       if (!existsSync(projectDir)) mkdirSync(projectDir, { recursive: true });
       writeFileSync(join(projectDir, 'config.json'), JSON.stringify(defaults, null, 2), 'utf8');
       console.log('✅ Config reset to defaults');
@@ -198,7 +198,7 @@ void app_main(void) {
       writeFileSync(join(root, 'sdkconfig.defaults'), `CONFIG_ESPTOOLPY_FLASHSIZE_16MB=y\nCONFIG_ESPTOOLPY_FLASHMODE_QIO=y\n`);
       writeFileSync(join(root, 'hardware.json'), JSON.stringify(generateHwConfig('espidf', projectName), null, 2));
       writeFileSync(join(root, '.gitignore'), `build/\nsdkconfig\n`);
-      const configDir = join(root, '.apex-unified');
+      const configDir = join(root, '.apex-discovery');
       mkdirSync(configDir, { recursive: true });
       writeFileSync(join(configDir, 'config.json'), JSON.stringify({ mode: 'embedded-dev', project: { name: projectName, language: 'c' } }, null, 2));
       console.log(`✅ Created ESP-IDF project: ${projectName}`);
@@ -234,7 +234,7 @@ void loop() {
 `);
       writeFileSync(join(root, 'hardware.json'), JSON.stringify(generateHwConfig('platformio', projectName), null, 2));
       writeFileSync(join(root, '.gitignore'), `.pio/\n.pioenvs/\n`);
-      const configDir = join(root, '.apex-unified');
+      const configDir = join(root, '.apex-discovery');
       mkdirSync(configDir, { recursive: true });
       writeFileSync(join(configDir, 'config.json'), JSON.stringify({ mode: 'embedded-dev', project: { name: projectName, language: 'cpp' } }, null, 2));
       console.log(`✅ Created PlatformIO project: ${projectName}`);
@@ -255,7 +255,7 @@ void loop() {
 `);
       writeFileSync(join(root, 'hardware.json'), JSON.stringify(generateHwConfig('arduino', projectName), null, 2));
       writeFileSync(join(root, '.gitignore'), `libraries/\n`);
-      const configDir = join(root, '.apex-unified');
+      const configDir = join(root, '.apex-discovery');
       mkdirSync(configDir, { recursive: true });
       writeFileSync(join(configDir, 'config.json'), JSON.stringify({ mode: 'embedded-dev', project: { name: projectName, language: 'cpp' } }, null, 2));
       console.log(`✅ Created Arduino project: ${projectName}`);
@@ -270,7 +270,7 @@ void loop() {
       writeFileSync(join(root, 'tests', 'example.test.js'), `import { describe, it } from 'node:test';\nimport assert from 'node:assert';\n`);
       writeFileSync(join(root, '.gitignore'), 'node_modules/\n');
       writeFileSync(join(root, 'README.md'), `# ${projectName}\n`);
-      const configDir = join(root, '.apex-unified');
+      const configDir = join(root, '.apex-discovery');
       mkdirSync(configDir, { recursive: true });
       writeFileSync(join(configDir, 'config.json'), JSON.stringify({ mode: 'daily-dev', project: { name: projectName, language: 'javascript' } }, null, 2));
       console.log(`✅ Created project: ${projectName}`);

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * TDD Guide — Interactive TDD workflow powered by apex-unified
+ * TDD Guide — Interactive TDD workflow powered by apex-discovery
  *
  * Usage: node tdd-guide.mjs
  *
@@ -23,7 +23,7 @@ const scriptDir = dirname(fileURLToPath(import.meta.url));
 const projectDir = process.cwd();
 
 console.log('\n' + '='.repeat(60));
-console.log('  apex-unified TDD Guide');
+console.log('  apex-discovery TDD Guide');
 console.log('='.repeat(60));
 console.log(`  Project: ${projectDir}`);
 console.log('');

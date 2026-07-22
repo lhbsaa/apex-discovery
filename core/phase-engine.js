@@ -1,5 +1,5 @@
 /**
- * apex-unified Phase Engine (GSD Core)
+ * apex-discovery Phase Engine (GSD Core)
  *
  * Six-phase development cycle: discuss → plan → execute → verify → ship
  * Integrates with mode system to inject only relevant skills into prompts.

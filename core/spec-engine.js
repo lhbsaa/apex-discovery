@@ -1,5 +1,5 @@
 /**
- * apex-unified Spec Engine — Spec-driven development workflow
+ * apex-discovery Spec Engine — Spec-driven development workflow
  *
  * Implements the propose → apply → archive cycle from OpenSpec.
  * Artifacts are stored in openspec/changes/<name>/

@@ -120,7 +120,7 @@ test('CLI config --set creates project config', () => {
     encoding: 'utf8', timeout: 10000, cwd: testDir
   });
   assert(out.includes('Set'), 'set succeeded');
-  const configPath = join(testDir, '.apex-unified', 'config.json');
+  const configPath = join(testDir, '.apex-discovery', 'config.json');
   assert(existsSync(configPath), 'project config created');
   const config = JSON.parse(readFileSync(configPath, 'utf8'));
   assert.equal(config.project.name, 'from-cli', 'value persisted');
@@ -129,10 +129,10 @@ test('CLI config --set creates project config', () => {
 test('CLI config --reset restores defaults', () => {
   const testDir = join(TMP_DIR, 'reset-test');
   mkdirSync(testDir, { recursive: true });
-  mkdirSync(join(testDir, '.apex-unified'), { recursive: true });
-  writeFileSync(join(testDir, '.apex-unified', 'config.json'), '{"project":{"name":"should-be-lost"}}', 'utf8');
+  mkdirSync(join(testDir, '.apex-discovery'), { recursive: true });
+  writeFileSync(join(testDir, '.apex-discovery', 'config.json'), '{"project":{"name":"should-be-lost"}}', 'utf8');
   execSync(`node "${join(ROOT, 'cli', 'main.js')}" config --reset`, { encoding: 'utf8', timeout: 10000, cwd: testDir });
-  const config = JSON.parse(readFileSync(join(testDir, '.apex-unified', 'config.json'), 'utf8'));
+  const config = JSON.parse(readFileSync(join(testDir, '.apex-discovery', 'config.json'), 'utf8'));
   assert.notEqual(config.project.name, 'should-be-lost', 'reset cleared custom value');
 });
 

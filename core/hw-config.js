@@ -1,5 +1,5 @@
 /**
- * apex-unified Hardware Configuration System
+ * apex-discovery Hardware Configuration System
  *
  * Reads hardware.json and provides pin/peripheral/MCU constraints
  * to phase-engine prompts. Generates templates for embedded projects.

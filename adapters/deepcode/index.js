@@ -1,12 +1,12 @@
 /**
- * apex-unified DeepCode CLI Adapter
+ * apex-discovery DeepCode CLI Adapter
  *
  * DeepCode CLI (deepcode) — 专为 DeepSeek V4 优化的终端 AI 编码助手
  * Install: npm install -g @vegamo/deepcode-cli
  * Use:     apex plan execute | deepcode
  *
  * DeepCode reads standard Agent Skills from .deepcode/skills/ and .agents/skills/
- * Compatible with apex-unified's 38 skills — no conversion needed.
+ * Compatible with apex-discovery's 188 skills — no conversion needed.
  */
 
 // No adapter code needed — deepcode accepts piped prompts via stdin.

@@ -1,5 +1,5 @@
 /**
- * apex-unified Hook Engine
+ * apex-discovery Hook Engine
  *
  * Executes hook chains in priority order.
  * Supports stop-on-block semantics and multi-platform output formatting.

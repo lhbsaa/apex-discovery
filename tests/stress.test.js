@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * apex-unified Stress Test & Performance Evaluation
+ * apex-discovery Stress Test & Performance Evaluation
  */
 
 import { readFileSync, writeFileSync, existsSync, mkdirSync, rmSync } from 'node:fs';
@@ -23,7 +23,7 @@ function estimateTokens(text) {
 }
 
 console.log('\n' + '='.repeat(60));
-console.log('  apex-unified Stress Test & Performance');
+console.log('  apex-discovery Stress Test & Performance');
 console.log('='.repeat(60));
 
 // ═══════════════════════════════════════════════════════

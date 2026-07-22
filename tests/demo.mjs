@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * apex-unified End-to-End Demo
+ * apex-discovery End-to-End Demo
  */
 
 import { loadConfig } from '../core/config.js';
@@ -13,7 +13,7 @@ import { writeFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 
 console.log('\n' + '='.repeat(60));
-console.log('  apex-unified End-to-End Demo');
+console.log('  apex-discovery End-to-End Demo');
 console.log('='.repeat(60));
 
 // 1. Config

@@ -1,5 +1,5 @@
 /**
- * apex-unified Mode Engine
+ * apex-discovery Mode Engine
  *
  * Handles:
  *  - 方式二: Natural language trigger matching (auto-switch mode by user input)

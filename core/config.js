@@ -1,9 +1,9 @@
 /**
- * apex-unified: Three-layer configuration system + mode helpers
+ * apex-discovery: Three-layer configuration system + mode helpers
  *
  * Priority (highest wins):
- *   1. Project config:  .apex-unified/config.json
- *   2. User config:     ~/.apex-unified/config.json
+ *   1. Project config:  .apex-discovery/config.json
+ *   2. User config:     ~/.apex-discovery/config.json
  *   3. System defaults: config/defaults.json
  */
 
@@ -37,14 +37,14 @@ function deepMerge(...sources) {
 /** Load config from all three layers, merged */
 export function loadConfig() {
   const defaultsPath = join(__dirname, '..', 'config', 'defaults.json');
-  const userConfigPath = join(homedir(), '.apex-unified', 'config.json');
-  const projectConfigPath = join(PROJECT_ROOT, '.apex-unified', 'config.json');
+  const userConfigPath = join(homedir(), '.apex-discovery', 'config.json');
+  const projectConfigPath = join(PROJECT_ROOT, '.apex-discovery', 'config.json');
   return deepMerge(readJSON(defaultsPath), readJSON(userConfigPath), readJSON(projectConfigPath));
 }
 
 /** Write project-level config */
 export function writeConfig(config) {
-  const dir = join(PROJECT_ROOT, '.apex-unified');
+  const dir = join(PROJECT_ROOT, '.apex-discovery');
   if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
   writeFileSync(join(dir, 'config.json'), JSON.stringify(config, null, 2), 'utf8');
   return true;

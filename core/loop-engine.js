@@ -1,5 +1,5 @@
 /**
- * apex-unified Loop Engine (Ralph Core)
+ * apex-discovery Loop Engine (Ralph Core)
  *
  * Persistent iteration loop that runs an AI coding tool repeatedly
  * until all tasks are complete or max iterations reached.

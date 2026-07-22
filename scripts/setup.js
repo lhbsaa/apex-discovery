@@ -28,7 +28,7 @@ const sciSkills = skillDirs.filter(name => sciKeywords.some(k => name.includes(k
 const devSkills = skillDirs.filter(name => !sciKeywords.some(k => name.includes(k)));
 
 console.log(`📊 skills/ 总数: ${skillDirs.length}`);
-console.log(`   ${devSkills.length} development skills (apex-unified engine)`);
+console.log(`   ${devSkills.length} development skills (apex-discovery engine)`);
 console.log(`   ${sciSkills.length}+ scientific skills (embedded)`);
 
 // Verify SKILL.md for a sample

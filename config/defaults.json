@@ -1,55 +1,98 @@
 {
   "project": {
     "name": "",
-    "language": "python"
+    "language": "python",
+    "test-framework": "vitest"
   },
   "mode": "research-scientist",
   "modes": {
     "research-scientist": {
       "label": "科研模式",
       "triggers": [
-        "科研",
-        "科学",
-        "research",
-        "研究论文",
-        "bioinformatics",
-        "chemistry",
-        "drug discovery",
-        "scientific"
+        "科研", "科学", "research", "研究论文", "bioinformatics",
+        "chemistry", "drug discovery", "scientific", "实验室"
       ],
       "skills": [
-        "systematic-debugging",
-        "architecture-decision-records",
-        "error-handling",
-        "verification-loop",
-        "verification-before-completion",
-        "writing-plans"
+        "systematic-debugging", "architecture-decision-records", "error-handling",
+        "verification-loop", "verification-before-completion", "writing-plans",
+        "coding-standards", "safety-guard"
       ],
       "agents": [
-        "architect",
-        "spec-miner",
-        "performance-optimizer",
-        "gsd-roadmapper"
+        "architect", "spec-miner", "performance-optimizer", "gsd-roadmapper",
+        "code-reviewer", "planner"
       ],
       "phases": {
-        "discuss": true,
-        "plan": true,
-        "execute": true,
-        "build": true,
-        "verify": true,
-        "ship": false
+        "discuss": true, "plan": true, "execute": true,
+        "build": true, "verify": true, "ship": false
       }
+    },
+    "daily-dev": {
+      "label": "日常开发",
+      "triggers": ["日常开发", "写代码", "开发功能", "修bug", "bug", "daily dev", "implement feature", "fix bug", "implement"],
+      "skills": ["test-driven-development", "requesting-code-review", "brainstorming", "writing-plans", "verification-before-completion", "git-workflow", "executing-plans"],
+      "agents": ["planner", "code-reviewer", "tdd-guide"],
+      "phases": { "discuss": false, "execute": { "tdd-enforced": true } }
+    },
+    "full-stack": {
+      "label": "全栈开发",
+      "triggers": ["全栈", "full stack", "前后端", "full-stack", "做一个完整功能", "build a full feature", "做一个"],
+      "skills": ["test-driven-development", "api-design", "frontend-patterns", "backend-patterns", "database-migrations", "security-review", "docker-patterns", "deployment-patterns", "git-workflow"],
+      "agents": ["planner", "architect", "code-reviewer", "security-reviewer", "gsd-executor"],
+      "phases": { "discuss": true, "execute": { "parallel-waves": 5 } }
+    },
+    "deep-research": {
+      "label": "深度研究",
+      "triggers": ["深度研究", "调研", "deep research", "architecture review", "安全审查", "性能优化", "security audit", "研究一下", "分析"],
+      "skills": ["systematic-debugging", "architecture-decision-records", "error-handling", "security-review", "verification-loop", "safety-guard", "gateguard", "coding-standards", "verification-before-completion"],
+      "agents": ["architect", "spec-miner", "security-reviewer", "performance-optimizer", "gsd-roadmapper"],
+      "phases": { "discuss": true, "plan": true, "execute": false }
+    },
+    "spec-mode": {
+      "label": "Spec驱动开发",
+      "triggers": ["spec", "需求", "写需求", "先设计", "先规划", "/opsx", "propose", "spec-driven", "先写文档"],
+      "skills": ["brainstorming", "writing-plans", "executing-plans", "verification-before-completion", "test-driven-development"],
+      "agents": ["planner", "spec-miner", "architect", "gsd-planner", "gsd-roadmapper"],
+      "phases": { "discuss": true, "plan": true }
+    },
+    "embedded-dev": {
+      "label": "嵌入式开发",
+      "triggers": ["嵌入式", "esp32", "esp-idf", "firmware", "arduino", "stm32", "platformio", "DIY", "硬件", "嵌入式开发", "固件"],
+      "skills": ["sdk-scan", "systematic-debugging", "coding-standards", "safety-guard", "verification-before-completion", "git-workflow", "gateguard"],
+      "agents": ["firmware-architect", "planner", "code-reviewer", "tdd-guide"],
+      "phases": { "discuss": true, "plan": true, "execute": { "compile-check": true }, "verify": { "binary-analyze": true }, "ship": { "firmware-release": true } }
     }
+  },
+  "tools": {
+    "enabled": ["tdd", "code-review", "brainstorming", "planning"],
+    "plugins": []
+  },
+  "phases": {
+    "discuss": true,
+    "plan": true,
+    "execute": { "parallel-waves": 3, "tdd-enforced": true },
+    "verify": { "require-tests": true, "require-typecheck": true },
+    "ship": { "auto-commit": true, "branch-prefix": "feature/" }
+  },
+  "ralph": {
+    "max-iterations": 20,
+    "backpressure-gates": ["lint", "test", "typecheck"]
   },
   "model": {
     "default": "deepseek-v4-flash",
     "provider": "deepseek",
     "phase-override": {
-      "plan": "deepseek-v4-pro"
+      "plan": "deepseek-v4-pro",
+      "build": "deepseek-v4-flash",
+      "ship": "deepseek-v4-flash"
     }
   },
   "ai": {
     "cli": "claude-code",
-    "hooks": true
+    "hooks": true,
+    "supported": ["claude-code", "claude", "codex", "pi", "omp", "deepcode"]
+  },
+  "platform": {
+    "preferred-cli": "claude-code",
+    "hooks-enabled": true
   }
 }

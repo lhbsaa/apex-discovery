@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        node: [20, 22]
+    runs-on: ${{ matrix.os }}
+    steps:
+    - uses: actions/checkout@v4
+    - name: Use Node.js ${{ matrix.node }}
+      uses: actions/setup-node@v4
+      with: { node-version: ${{ matrix.node }} }
+    - name: Check project structure
+      run: |
+        echo "=== Directory structure ==="
+        ls -la
+        echo "=== CLI exists ==="
+        test -f cli/main.js && echo "✅ cli/main.js exists"
+        echo "=== Core engines ==="
+        ls core/*.js | wc -l
+        echo "=== Agents ==="
+        ls agents/*.md | wc -l
+    - name: CLI --help works
+      run: node cli/main.js --help
+    - name: CLI status works
+      run: node cli/main.js status
+    - name: Unit tests
+      run: node tests/unit.test.js

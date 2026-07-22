@@ -1,23 +1,37 @@
 {
   "name": "@apex-discovery/core",
-  "version": "0.1.0",
-  "description": "apex-discovery: Scientific research extension for apex-unified — integrates 148+ scientific skills for biology, chemistry, medicine, and materials research.",
+  "version": "0.2.0",
+  "description": "apex-discovery: Standalone scientific research + AI coding agent platform. Zero-dependency prompt orchestration with 10 engines, 7 phases, 38+38 skills, 18 agents. Built-in research-scientist mode with 149 scientific skills.",
   "keywords": [
-    "apex-discovery", "apex-unified", "scientific-research", "ai-scientist",
+    "apex-discovery", "scientific-research", "ai-scientist",
     "bioinformatics", "cheminformatics", "drug-discovery", "materials-science",
-    "scientific-agent-skills", "research-automation"
+    "research-automation", "ai-coding-agent", "prompt-engineering",
+    "spec-driven-development", "tdd", "embedded-development",
+    "deepseek", "claude-code"
   ],
   "type": "module",
   "main": "cli/main.js",
-  "bin": { "apex-discovery": "cli/main.js" },
+  "bin": {
+    "apex-discovery": "cli/main.js",
+    "apex": "cli/main.js"
+  },
   "scripts": {
     "setup": "node scripts/setup.js",
-    "test": "node tests/unit.test.js"
+    "test": "node tests/unit.test.js",
+    "stress": "node tests/stress.test.js",
+    "demo": "node tests/demo.mjs",
+    "start": "node cli/main.js"
   },
-  "engines": { "node": ">=20.0.0" },
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/lhbsaa/apex-discovery.git"
+  },
+  "homepage": "https://github.com/lhbsaa/apex-discovery#readme",
+  "bugs": {
+    "url": "https://github.com/lhbsaa/apex-discovery/issues"
   },
   "license": "MIT",
   "dependencies": {},

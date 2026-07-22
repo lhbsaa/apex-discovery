@@ -1,0 +1,15 @@
+{
+  "name": "apex-discovery",
+  "version": "0.2.0",
+  "description": "apex-discovery: Standalone scientific research + AI coding agent — 188 skills, 6 modes, 7 phases, 18 agents",
+  "author": { "name": "lhbsaa" },
+  "skills": "./skills/",
+  "commands": [
+    { "name": "apex:status", "description": "Show project status" },
+    { "name": "apex:plan", "description": "Show phase prompt" },
+    { "name": "apex:review", "description": "Show code review prompt" },
+    { "name": "apex:detect", "description": "Auto-detect mode from natural language" },
+    { "name": "apex:spec", "description": "Spec-driven development workflow" }
+  ],
+  "keywords": ["apex-discovery", "scientific-research", "workflow", "agent", "automation"]
+}

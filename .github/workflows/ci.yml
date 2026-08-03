@@ -19,11 +19,12 @@ jobs:
       uses: actions/setup-node@v4
       with: { node-version: ${{ matrix.node }} }
     - name: Check project structure
+      shell: bash
       run: |
         echo "=== Directory structure ==="
         ls -la
         echo "=== CLI exists ==="
-        test -f cli/main.js && echo "✅ cli/main.js exists"
+        test -f cli/main.js && echo "cli/main.js exists"
         echo "=== Core engines ==="
         ls core/*.js | wc -l
         echo "=== Agents ==="
@@ -34,3 +35,5 @@ jobs:
       run: node cli/main.js status
     - name: Unit tests
       run: node tests/unit.test.js
+    - name: Stress tests
+      run: node tests/stress.test.js

@@ -8,7 +8,7 @@
 
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import { loadConfig } from './config.js';
 
 /**
@@ -25,14 +25,14 @@ export function runIteration({ prompt, tool, cwd, timeout = 120000 }) {
   // Detect available tool for graceful fallback
   let toolAvailable = false;
   try {
-    execSync(`${cliCommand.check}`, { encoding: 'utf8', timeout: 5000, stdio: 'pipe' });
+    execFileSync(cliCommand.check.cmd, cliCommand.check.args, { encoding: 'utf8', timeout: 5000, stdio: 'pipe' });
     toolAvailable = true;
   } catch { /* tool CLI not installed */ }
 
   try {
     let output;
     if (toolAvailable) {
-      output = execSync(cliCommand.run, {
+      output = execFileSync(cliCommand.run.cmd, cliCommand.run.args, {
         input: prompt,
         encoding: 'utf8',
         timeout,
@@ -41,11 +41,8 @@ export function runIteration({ prompt, tool, cwd, timeout = 120000 }) {
         maxBuffer: 10 * 1024 * 1024,
       });
     } else {
-      output = execSync(`echo "${prompt.replace(/"/g, '\\"')}"`, {
-        encoding: 'utf8',
-        timeout,
-        cwd: cwd || process.cwd(),
-      });
+      // No CLI available: return the prompt itself as output (no shell involved).
+      output = prompt;
     }
 
     const completed = output.includes('<promise>COMPLETE</promise>');
@@ -65,17 +62,20 @@ function resolveAiTool() {
   }
 }
 
-/** Build { check, run } commands for a given tool name. */
+/**
+ * Build { check, run } commands for a given tool name.
+ * Commands are { cmd, args } arrays so they never go through a shell.
+ */
 function buildCliCommand(tool) {
   const known = {
-    'claude':       { check: 'claude --version',                   run: 'claude --dangerously-skip-permissions --print' },
-    'claude-code':  { check: 'claude --version',                   run: 'claude --dangerously-skip-permissions --print' },
-    'codex':        { check: 'codex --version 2>nul',              run: 'codex exec --print --prompt-stdin' },
-    'pi':           { check: 'pi --version 2>nul',                 run: 'pi --print' },
-    'deepcode':     { check: 'deepcode --version 2>nul',           run: 'deepcode --print' },
-    'omp':          { check: 'omp --version 2>nul',                run: 'omp --print' },
+    'claude':       { check: { cmd: 'claude', args: ['--version'] },                                     run: { cmd: 'claude', args: ['--dangerously-skip-permissions', '--print'] } },
+    'claude-code':  { check: { cmd: 'claude', args: ['--version'] },                                     run: { cmd: 'claude', args: ['--dangerously-skip-permissions', '--print'] } },
+    'codex':        { check: { cmd: 'codex', args: ['--version'] },                                      run: { cmd: 'codex', args: ['exec', '--print', '--prompt-stdin'] } },
+    'pi':           { check: { cmd: 'pi', args: ['--version'] },                                         run: { cmd: 'pi', args: ['--print'] } },
+    'deepcode':     { check: { cmd: 'deepcode', args: ['--version'] },                                   run: { cmd: 'deepcode', args: ['--print'] } },
+    'omp':          { check: { cmd: 'omp', args: ['--version'] },                                        run: { cmd: 'omp', args: ['--print'] } },
   };
-  return known[tool] || { check: `${tool} --version 2>nul`, run: `${tool} --print` };
+  return known[tool] || { check: { cmd: tool, args: ['--version'] }, run: { cmd: tool, args: ['--print'] } };
 }
 
 /**

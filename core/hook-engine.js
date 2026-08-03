@@ -16,7 +16,7 @@
  */
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 
 export function executeChain(eventType, chain = [], options = {}) {
   const { stopOnBlock = false, hooksDir, apexRoot = process.cwd() } = options;
@@ -47,6 +47,11 @@ export function executeChain(eventType, chain = [], options = {}) {
 }
 
 function resolveHook(source, hook, apexRoot) {
+  // Hook names must be simple identifiers — never let them traverse paths.
+  if (!hook || typeof hook !== 'string' || !/^[a-z0-9][a-z0-9-_]*$/i.test(hook)) {
+    return null;
+  }
+
   // Hook directories by source — sibling directories from the monorepo layout.
   // Each entry is resolved at call time so non-existent dirs are handled
   // by the existence check below rather than producing noisy errors.
@@ -89,11 +94,12 @@ function executeScript(path, eventType) {
   try {
     const isWin = process.platform === 'win32';
     let cmd;
-    if (path.endsWith('.sh')) cmd = `bash "${path}"`;
-    else if (path.endsWith('.cmd')) cmd = isWin ? `cmd.exe /c "${path}"` : `bash "${path}"`;
-    else cmd = `node "${path}"`;
+    let args;
+    if (path.endsWith('.sh')) { cmd = 'bash'; args = [path]; }
+    else if (path.endsWith('.cmd')) { cmd = isWin ? 'cmd.exe' : 'bash'; args = isWin ? ['/c', path] : [path]; }
+    else { cmd = 'node'; args = [path]; }
 
-    const output = execSync(cmd, {
+    const output = execFileSync(cmd, args, {
       encoding: 'utf8',
       timeout: 30000,
       env: { ...process.env, APEX_EVENT: eventType },

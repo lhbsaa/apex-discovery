@@ -21,7 +21,7 @@ function loadSkillFromDisk(name) {
       id: fm['apex-id'] || name,
       category: fm['apex-category'] || 'domain',
       description: fm['description'] || '',
-      phase: fm['apex-lifecycle']?.phase || ['execute'],
+      phase: fm['apex-lifecycle']?.phase || [],
       triggers: fm['apex-lifecycle']?.triggers || [],
       compatibility: fm['apex-compatibility'] || [],
       content,

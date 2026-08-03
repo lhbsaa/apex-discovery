@@ -29,9 +29,49 @@
  * @property {string} content
  */
 
+/**
+ * Parse a YAML flow-style array like `[foo, "bar baz", 'x y', claude-code]`.
+ * Handles quoted entries containing spaces, escapes, and mixed quoting.
+ * Returns [] on malformed input.
+ */
 function yamlArrayToJSON(str) {
-  const quoted = str.replace(/([a-zA-Z0-9_-]+)/g, '"$1"').replace(/""/g, '"');
-  try { return JSON.parse(quoted); } catch { return []; }
+  if (!str || typeof str !== 'string') return [];
+  const m = str.trim().match(/^\[([\s\S]*)\]$/);
+  if (!m) return [];
+  const body = m[1];
+  const items = [];
+  let i = 0;
+  const len = body.length;
+  while (i < len) {
+    // Skip whitespace and separators
+    while (i < len && (body[i] === ' ' || body[i] === '\t' || body[i] === ',' || body[i] === '\n')) i++;
+    if (i >= len) break;
+    const ch = body[i];
+    if (ch === '"' || ch === "'") {
+      const quote = ch;
+      let buf = '';
+      i++;
+      while (i < len && body[i] !== quote) {
+        if (quote === '"' && body[i] === '\\' && i + 1 < len) {
+          buf += body[i + 1];
+          i += 2;
+          continue;
+        }
+        buf += body[i];
+        i++;
+      }
+      i++; // skip closing quote
+      items.push(buf);
+    } else {
+      let buf = '';
+      while (i < len && body[i] !== ',') {
+        buf += body[i];
+        i++;
+      }
+      items.push(buf.trim());
+    }
+  }
+  return items.filter(v => v !== '');
 }
 
 function parseFrontmatter(content) {
@@ -46,9 +86,11 @@ function parseFrontmatter(content) {
     if (!kvMatch) continue;
     const key = kvMatch[1];
     let val = kvMatch[2].trim();
-    if (val === '' && i + 1 < end) {
+    if (val === '' && i + 1 < end && lines[i + 1] !== lines[i + 1].trim()) {
+      // Nested sub-object: consume the indented block, then skip past it.
       const subKeys = {};
-      for (let j = i + 1; j < end; j++) {
+      let j = i + 1;
+      for (; j < end; j++) {
         const subLine = lines[j];
         const subTrimmed = subLine.trim();
         if (!subTrimmed || subLine === subTrimmed || subLine.startsWith('---')) break;
@@ -65,6 +107,7 @@ function parseFrontmatter(content) {
         }
       }
       if (Object.keys(subKeys).length > 0) fm[key] = subKeys;
+      i = j - 1; // next iteration lands on the first top-level line
       continue;
     }
     if (val.startsWith('[')) {

@@ -54,6 +54,9 @@ export function loadConfig() {
 
 /**
  * Write project-level config.
+ * Callers should pass ONLY the project-layer overrides (not the full merged
+ * config), otherwise defaults get frozen into the project file and future
+ * defaults.json upgrades would no longer take effect.
  * @param {Record<string,any>} config
  * @returns {boolean}
  */
@@ -62,6 +65,14 @@ export function writeConfig(config) {
   if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
   writeFileSync(join(dir, 'config.json'), JSON.stringify(config, null, 2), 'utf8');
   return true;
+}
+
+/**
+ * Read the project-level config layer (`.apex-discovery/config.json`).
+ * @returns {Record<string,any>}
+ */
+export function getProjectConfig() {
+  return readJSON(join(PROJECT_ROOT, '.apex-discovery', 'config.json'));
 }
 
 /**

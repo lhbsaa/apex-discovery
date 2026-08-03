@@ -1,7 +1,7 @@
 {
   "name": "@apex-discovery/core",
   "version": "0.2.0",
-  "description": "apex-discovery: Standalone scientific research + AI coding agent platform. Zero-dependency prompt orchestration with 10 engines, 7 phases, 38+38 skills, 18 agents. Built-in research-scientist mode with 149 scientific skills.",
+  "description": "apex-discovery: Standalone scientific research + AI coding agent platform. Zero-dependency prompt orchestration with 8 core engines, 7 phases, 39+149 skills, 18 agents. Built-in research-scientist mode with 149 scientific skills.",
   "keywords": [
     "apex-discovery", "scientific-research", "ai-scientist",
     "bioinformatics", "cheminformatics", "drug-discovery", "materials-science",

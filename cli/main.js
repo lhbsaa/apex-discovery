@@ -20,32 +20,49 @@
  *   pi         Pi Coding Agent integration
  */
 
-import { loadConfig, writeConfig, getConfigValue, getActiveSkills, getActiveAgents, getCurrentMode, isValidMode, getModel, getAiTool } from '../core/config.js';
+import { loadConfig, writeConfig, getProjectConfig, getActiveSkills, getActiveAgents, getCurrentMode, isValidMode, getModel, getAiTool } from '../core/config.js';
 import { existsSync, readdirSync, lstatSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { execSync, execFileSync } from 'node:child_process';
+import { execSync } from 'node:child_process';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
 const SKILLS_DIR = join(ROOT, 'skills');
 
-// ── Scientific skill helpers ──
+// ── Skill counting ──
 
-/** Count total entries in skills/ (handles junctions, symlinks, directories) */
-function countScientificSkills() {
-  if (!existsSync(SKILLS_DIR)) return 0;
-  let count = 0;
+/**
+ * Count skills in skills/, split into development (have apex-id frontmatter)
+ * and scientific skills. Handles junctions/symlinks on Windows.
+ * @returns {{total:number, dev:number, sci:number}}
+ */
+function countSkills() {
+  if (!existsSync(SKILLS_DIR)) return { total: 0, dev: 0, sci: 0 };
+  let dev = 0, sci = 0;
   for (const entry of readdirSync(SKILLS_DIR, { withFileTypes: true })) {
-    const fullPath = join(SKILLS_DIR, entry.name);
-    if (entry.isDirectory()) { count++; continue; }
-    try { if (lstatSync(fullPath).isSymbolicLink()) count++; } catch {}
+    let isDir = entry.isDirectory();
+    if (!isDir) {
+      try { isDir = lstatSync(join(SKILLS_DIR, entry.name)).isSymbolicLink(); } catch { continue; }
+      if (!isDir) continue;
+    }
+    const skillDir = join(SKILLS_DIR, entry.name);
+    const skillFile = join(skillDir, 'SKILL.md');
+    if (existsSync(skillFile)) {
+      try {
+        const content = readFileSync(skillFile, 'utf8');
+        if (/^apex-id:/m.test(content)) dev++; else sci++;
+      } catch { sci++; }
+    } else {
+      sci++;
+    }
   }
-  return count;
+  return { total: dev + sci, dev, sci };
 }
 
 // ── CLI Argument Parsing ──
-// Note: uses execFileSync for all subprocess calls to avoid shell injection
+// Note: uses execSync only for internal setup; subprocess commands pass args
+// via execFileSync (see core engines) to avoid shell injection.
 
 const args = process.argv.slice(2);
 const cmd = args[0];
@@ -55,7 +72,7 @@ switch (cmd) {
   case undefined:
   case 'help':
   case '--help': {
-    const skillCount = countScientificSkills();
+    const skillCount = countSkills();
     console.log(`
 apex-discovery — Standalone scientific research + AI coding agent
 
@@ -85,12 +102,12 @@ Commands:
   pi chain                      Generate Pi agent-chain config
   pi damage                     Generate Pi damage-control safety rules
 
-Total Skills:   ${skillCount} (development + scientific, embedded)
+Total Skills:   ${skillCount.total} (${skillCount.dev} development + ${skillCount.sci} scientific, embedded)
 `);
 
     console.log(`Modes: research-scientist, daily-dev, full-stack, deep-research, spec-mode, embedded-dev`);
     console.log(`Phases: explore → discuss → plan → execute → build → verify → ship`);
-    console.log(`Skills: ${skillCount} total (development + scientific, auto-discovered)`);
+    console.log(`Skills: ${skillCount.total} total (${skillCount.dev} development + ${skillCount.sci} scientific, auto-discovered)`);
     console.log(`Agents: 18 peer-reviewed agents`);
     process.exit(0);
   }
@@ -109,7 +126,8 @@ Total Skills:   ${skillCount} (development + scientific, embedded)
       const key = kv.slice(0, eqIdx);
       let value = kv.slice(eqIdx + 1);
       try { value = JSON.parse(value); } catch {}
-      const config = loadConfig();
+      // Apply only the delta to the project layer — never the full merged config.
+      const config = getProjectConfig();
       const keys = key.split('.');
       let obj = config;
       for (let i = 0; i < keys.length - 1; i++) {
@@ -117,7 +135,7 @@ Total Skills:   ${skillCount} (development + scientific, embedded)
         obj = obj[keys[i]];
       }
       obj[keys[keys.length - 1]] = value;
-      await writeConfig(config);
+      writeConfig(config);
       console.log(`✅ Set ${key} = ${JSON.stringify(value)}`);
     } else if (args.includes('--reset')) {
       const defaults = JSON.parse(readFileSync(new URL('../config/defaults.json', import.meta.url), 'utf8'));
@@ -134,10 +152,11 @@ Total Skills:   ${skillCount} (development + scientific, embedded)
         console.error(`❌ Unknown mode: ${modeName}. Available: ${modes}`);
         process.exit(1);
       }
-      const config = loadConfig();
-      config.mode = modeName;
-      await writeConfig(config);
-      const label = config.modes?.[modeName]?.label || modeName;
+      // Write only the mode delta, not the full merged config.
+      const project = getProjectConfig();
+      project.mode = modeName;
+      writeConfig(project);
+      const label = loadConfig().modes?.[modeName]?.label || modeName;
       console.log(`✅ Switched to mode: ${modeName} (${label})`);
       const active = getActiveSkills();
       console.log(`   Active skills (${active.length}): ${active.join(', ')}`);
@@ -282,7 +301,6 @@ void loop() {
   // ── plan ──
   case 'plan': {
     const { buildPhasePrompt } = await import('../core/phase-engine.js');
-    const { findSkillsByPhase, listSkills } = await import('../core/skill-engine.js');
     const config = loadConfig();
     const mode = getCurrentMode();
     const phase = args[1] || 'discuss';
@@ -327,23 +345,21 @@ void loop() {
   // ── status (extended, scientific-aware) ──
   case 'status': {
     const config = loadConfig();
-    const { listSkills } = await import('../core/skill-engine.js');
     const { listAgents } = await import('../core/agent-engine.js');
     const { getPhaseInfo } = await import('../core/phase-engine.js');
     const { pluginCount } = await import('../core/plugin-engine.js');
-    const skills = listSkills();
     const agents = listAgents();
     const phases = getPhaseInfo();
     const mode = getCurrentMode();
     const activeSkills = getActiveSkills();
     const activeAgents = getActiveAgents();
-    const sciSkills = countScientificSkills();
+    const counts = countSkills();
     console.log('\napex-discovery Status');
     console.log('='.repeat(40));
     console.log(`Project:      ${config.project?.name || '(unnamed)'}`);
     console.log(`Language:     ${config.project?.language || 'unknown'}`);
     console.log(`Mode:         ${mode.name} (${mode.label || ''})`);
-    console.log(`Active sk.:   ${activeSkills.length}/${sciSkills} (${activeSkills.join(', ') || 'none'})`);
+    console.log(`Active sk.:   ${activeSkills.length}/${counts.dev} dev (+${counts.sci} scientific, ${activeSkills.join(', ') || 'none'})`);
     console.log(`Active ag.:   ${activeAgents.length}/${agents.length} (${activeAgents.join(', ') || 'none'})`);
     console.log(`Plugins:      ${pluginCount()} installed`);
     console.log(`Phases:       ${phases.map(p => p.name).join(' → ')}`);
@@ -352,7 +368,7 @@ void loop() {
     console.log(`RALPH:        ${config.ralph?.['max-iterations'] || 20} max iterations`);
     console.log(`Model:        ${model.default} (provider: ${model.provider})`);
     console.log(`AI Tool:      ${aiTool.cli}`);
-    console.log(`All Skills:   ${sciSkills} total (embedded)`);
+    console.log(`All Skills:   ${counts.total} total (${counts.dev} development + ${counts.sci} scientific, embedded)`);
     break;
   }
 

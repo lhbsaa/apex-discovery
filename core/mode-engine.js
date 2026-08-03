@@ -6,7 +6,30 @@
  *  - 方式三: Slash command parsing (/apex:mode <name>)
  */
 
-import { loadConfig, writeConfig, isValidMode, getActiveSkills, getActiveAgents } from './config.js';
+import { loadConfig, writeConfig, getProjectConfig, isValidMode, getActiveSkills, getActiveAgents } from './config.js';
+
+/** Persist a mode change as a minimal project-config delta (not the full merged config). */
+function setMode(name) {
+  const project = getProjectConfig();
+  project.mode = name;
+  writeConfig(project);
+}
+
+/**
+ * Match a single trigger against input.
+ * - CJK (non-ASCII) triggers: substring match (phrases like 嵌入式开发).
+ * - Latin triggers: whole-phrase word-boundary match so "bug" does not match
+ *   "debug" and "spec" does not match "specific".
+ */
+function triggerMatches(trigger, input) {
+  const tl = trigger.toLowerCase();
+  if (!tl) return false;
+  if (/[\u3400-\u9fff]/.test(tl)) {
+    return input.includes(tl);
+  }
+  const escaped = tl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`(^|[^a-z0-9])${escaped}([^a-z0-9]|$)`, 'i').test(input);
+}
 
 /**
  * Parse user input and auto-switch mode if a trigger matches.
@@ -21,18 +44,9 @@ export function detectModeFromInput(input) {
   for (const [name, def] of Object.entries(config.modes || {})) {
     if (name === currentMode) continue;
     const triggers = def.triggers || [];
-    // Check both: trigger contained in input, AND keywords from trigger found in input
-    const match = triggers.some(t => {
-      const tl = t.toLowerCase();
-      // Direct substring match
-      if (lower.includes(tl)) return true;
-      // Keyword match: split trigger into words, check if any word is in input
-      const words = tl.split(/[\s,，、]+/).filter(Boolean);
-      return words.some(w => w.length >= 2 && lower.includes(w));
-    });
+    const match = triggers.some(t => triggerMatches(t, lower));
     if (match) {
-      config.mode = name;
-      writeConfig(config);
+      setMode(name);
       return { switched: true, from: currentMode, to: name, label: def.label || name };
     }
   }
@@ -72,8 +86,7 @@ export function executeSlashCommand(cmd, args) {
       return { handled: true, message: `Unknown mode: ${target}. Available: ${modes}` };
     }
     const config = loadConfig();
-    config.mode = target;
-    writeConfig(config);
+    setMode(target);
     const label = config.modes?.[target]?.label || target;
     return {
       handled: true,

@@ -9,10 +9,13 @@
 import { existsSync, readFileSync, readdirSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
+
+/** Validate a plugin package name: scoped or unscoped npm package names only. */
+const NPM_NAME_RE = /^(@[a-z0-9][a-z0-9-._]*\/)?[a-z0-9][a-z0-9-._]*$/i;
 
 function copyRecursive(src, dest) {
   mkdirSync(dest, { recursive: true });
@@ -56,8 +59,11 @@ export function installPlugin(source) {
   // npm package: @apex/skills-<name>
   if (source.startsWith('@apex/') || source.startsWith('apex-')) {
     const pkgName = source.startsWith('@apex/') ? source : `@apex/${source}`;
+    if (!NPM_NAME_RE.test(pkgName)) {
+      return { success: false, error: `Invalid package name: ${pkgName}` };
+    }
     try {
-      execSync(`npm install ${pkgName} --no-save`, { cwd: ROOT, stdio: 'pipe', timeout: 60000 });
+      execFileSync('npm', ['install', pkgName, '--no-save'], { cwd: ROOT, stdio: 'pipe', timeout: 60000 });
       const nodeModulesPath = join(ROOT, 'node_modules', pkgName);
       if (existsSync(nodeModulesPath)) {
         const pluginName = pkgName.replace('@apex/', '');

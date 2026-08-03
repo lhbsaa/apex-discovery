@@ -30,11 +30,11 @@ export function specInit() {
 
 /** Propose a new feature: create spec artifacts */
 export function specPropose(feature) {
-  let name = feature.toLowerCase()
+  let name = (feature || '').toLowerCase()
     .replace(/[^a-z0-9\u00a0-\uffff]+/g, '-')  // keep almost everything
     .replace(/^-+|-+$/g, '')
     .slice(0, 60);
-  if (!name) name = `change-${Date.now().toString(36)}`;
+  if (!name || sanitizeChangeName(name) === null) name = `change-${Date.now().toString(36)}`;
 
   const changeDir = join(SPEC_DIR, 'changes', name);
   if (existsSync(changeDir)) return { error: `Feature "${name}" already exists`, dir: changeDir };
@@ -66,18 +66,34 @@ export function specList() {
       let taskCount = 0, doneCount = 0;
       if (existsSync(tasksPath)) {
         const tasks = readFileSync(tasksPath, 'utf8');
-        taskCount = (tasks.match(/\[ \]/g) || []).length;
+        const pending = (tasks.match(/\[ \]/g) || []).length;
         doneCount = (tasks.match(/\[x\]/g) || []).length;
+        taskCount = pending + doneCount;
       }
       return { name: d.name, tasks: taskCount, done: doneCount };
     });
 }
 
+/**
+ * Sanitize a change name for use as a directory segment.
+ * Rejects empty names and anything that could traverse directories,
+ * while allowing unicode (CJK) letters like specPropose preserves.
+ */
+export function sanitizeChangeName(name) {
+  if (!name || typeof name !== 'string') return null;
+  if (name === '.' || name === '..') return null;
+  if (name.includes('..') || name.includes('/') || name.includes('\\') || name.includes('\0')) return null;
+  if (/[\s\u0000-\u001f]/.test(name)) return null;
+  return name;
+}
+
 /** Archive a completed change */
 export function specArchive(name) {
-  const src = join(SPEC_DIR, 'changes', name);
-  if (!existsSync(src)) return { error: `Change "${name}" not found` };
-  const archive = join(SPEC_DIR, 'changes', 'archive', `${new Date().toISOString().slice(0, 10)}-${name}`);
+  const safe = sanitizeChangeName(name);
+  if (!safe) return { error: `Invalid change name: "${name}"` };
+  const src = join(SPEC_DIR, 'changes', safe);
+  if (!existsSync(src)) return { error: `Change "${safe}" not found` };
+  const archive = join(SPEC_DIR, 'changes', 'archive', `${new Date().toISOString().slice(0, 10)}-${safe}`);
   ensureDir(archive);
   copyDirSync(src, archive);
   rmSync(src, { recursive: true });

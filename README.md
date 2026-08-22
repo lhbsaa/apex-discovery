@@ -226,6 +226,17 @@ Skills are auto-discovered from `skills/<name>/SKILL.md` and phase-injected by t
 
 ---
 
+## Related Projects
+
+The **APEX ecosystem** — three repos, one workflow:
+
+| Repo | What it does |
+|------|--------------|
+| [apex-unified](https://github.com/lhbsaa/apex-unified) | Unified AI coding agent plugin — 5 modes, 7 phases, 39 skills, 18 agents |
+| [apex-protocol](https://github.com/lhbsaa/apex-protocol) | Unified protocol layer making Superpowers, ECC, GSD, and Ralph work together |
+
+---
+
 ## License
 
 MIT
